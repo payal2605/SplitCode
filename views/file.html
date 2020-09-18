@@ -1,0 +1,269 @@
+<%- include('includes/header.html'); -%>
+<head>
+  <title><%=data.name%></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+ <script src="https://use.fontawesome.com/34f3485c75.js"></script>
+  <link href="/stylesheets/file.css" rel="stylesheet">
+</head>
+<body id="body">
+
+<script>
+function openNav() {
+  document.getElementById("chatSidebar").style.display = "block";
+}
+
+function closeNav() {
+  document.getElementById("chatSidebar").style.display= "none";
+}
+
+function openSide() {
+  document.getElementById("groupSidebar").style.display = "block";
+}
+
+function closeSide() {
+  document.getElementById("groupSidebar").style.display= "none";
+}
+</script>
+  <div class="row">
+    <div class="col-md-12">
+      <textarea id="codeeditor"><%=data.sourceCode%></textarea>
+    </div>
+
+
+
+  </div>
+  <%if(currentUser){%>
+  <div class="header-top-right header-span" id="chat-button"><a id="a-home" href="/user/<%=currentUser._id%>"><i class="fa fa-home fa-2x" ></i></a></div>
+  </div>
+  <%}else{%>
+    <div class="header-top-right header-span" id="chat-button"><a id="a-home" href="/login"><i class="fa fa-sign-in fa-2x" ></i></a></div>
+  </div>
+<%}%>
+ <div style="top:5rem" class="header-top-right header-span" data-toggle="modal" data-target="#myModal" id="chat-button"><i class="fa fa-share-alt fa-2x" ></i></div>
+ <div style="top:10rem"class=" header-top-right header-span" onClick="openSide()" id="chat-button"><i class="fa fa-users fa-2x" ></i></div></div>
+ <div style="top:15rem" class="header-top-right header-span" onClick="openNav()" id="chat-button"><i class="fa fa-comments fa-2x" aria-hidden="true" ></i></div>
+ 
+</div>
+
+
+  <div id="chatSidebar" class="sidebar">
+  <a href="javascript:void(0)" class="closebtn" onClick="closeNav()">×</a>
+  <div class="chat-group">
+  <ul class="message" id="user-messages">
+    <li id="chat-title">Chat</li>
+  </ul>
+</div>
+
+<textarea placeholder="Type here" type="text" id="text-line"></textarea>
+</div>
+
+ <div id="groupSidebar" class="sidebar">
+  <a href="javascript:void(0)" class="closebtn" onClick="closeSide()">×</a>
+  <div class="chat-group">
+  <ul class="message">
+  <li id="chat-title">Group</li>
+  </ul>
+  <ul class="message" id="group-messages">
+    
+  </ul>
+</div>
+</div>
+
+ <div class="modal fade" id="myModal" role="dialog">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">Share this Link</h4>
+        </div>
+        <div class="modal-body">
+          <p id="url"></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<input type="hidden" value="<%=data._id%>" id="id">
+<input type="hidden" value="<%=displayName%>" id="name">
+<input type="hidden" value="<%=data.name%>" id="title">
+<input type="hidden" value="<%=data.language%>" id="language">
+
+
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/plugins/ot/ot.js"></script>
+
+
+
+<script>
+  //Code Editor
+  var EditorClient = ot.EditorClient;
+  var SocketIOAdapter = ot.SocketIOAdapter;
+  var CodeMirrorAdapter = ot.CodeMirrorAdapter;
+  var socket = io();
+  var mode = null;
+  var language = $('#language').val();
+
+  if(language==="js"){
+    mode = 'javascript'
+  } else if(language==="html"){
+    mode = 'text/html'
+  } else if(language==="css"){
+    mode = 'text/x-scss'
+  } else if(language==="java"){
+    mode = 'text/x-java'
+  }else if(language==="cpp"){
+    mode = 'text/x-c++src'
+  }else if(language==="c"){
+    mode = 'text/x-csrc'
+  }else if(language==="py"){
+    mode = 'text/x-python'
+  }
+  
+
+  var codeEditor = CodeMirror.fromTextArea(document.getElementById('codeeditor'), {
+    lineNumbers: true,
+    styleActiveLine: true,
+    matchBrackets: true,
+    theme: 'dracula',
+    mode: mode,
+    hint:CodeMirror.hint.xml,
+    htmlMode: true,
+    autoCloseTags: true,
+    autoCloseBrackets:true,
+    lineWrapping: true,
+    showCursorWhenSelecting: true,
+    extraKeys: {
+        "Ctrl-Space": "autocomplete",
+        "'@'": "autocomplete",
+      }
+  });
+  
+var autoComplete = false;
+codeEditor.on("keyup", function (cm, event) {
+    if(mode=="text/html"){
+       console.log(event.keyCode)
+      if(event.shiftKey && event.keyCode==188){
+        autoComplete = true;
+      }
+       if (!cm.state.completionActive && event.keyCode > 64 && event.keyCode < 91 && autoComplete){
+         CodeMirror.commands.autocomplete(cm, null, {completeSingle: false});
+       }
+       if(event.keyCode==190){
+        autoComplete = false;
+      }
+    }else{
+      if (!cm.state.completionActive && event.keyCode > 64 && event.keyCode < 91){
+        CodeMirror.commands.autocomplete(cm, null, {completeSingle: false});
+    }
+    }
+  })
+
+  var idMapping = new Map();
+  var sourceCode = $('#codeeditor').val();
+  var cmClient;
+  function init(str, revision, clients, serverAdapter) {
+    if (!sourceCode) {
+      codeEditor.setValue(str);
+    }
+    cmClient = window.cmClient = new EditorClient(
+      revision, clients, serverAdapter, new CodeMirrorAdapter(codeEditor)
+    );
+  };
+  socket.on('doc', function(obj) {
+    console.log("emitted doc")
+    init(obj.str, obj.revision, obj.clients, new SocketIOAdapter(socket));
+  });
+  socket.on('getClient',function(data){
+    var clients = data.clients;
+     $('#group-messages').empty();
+     var flag = false;
+     idMapping.clear();
+  for (const [key, client] of Object.entries(clients)) {
+    if(key===socket.id){
+      flag = true;
+    }
+  $('#group-messages').append(groupMember(client.name, flag));
+  idMapping.set(key,client.name);
+       flag = false;
+}
+})
+
+socket.on('disconnect',()=>{
+  alert("Unable to reach the server!!! Please refresh the page")
+ $('body').append('<div id="over" style="position: absolute;top:0;left:0;width: 100%;height:100%;z-index:2;opacity:0.4;filter: alpha(opacity = 50)"></div>');
+  
+})
+
+$( document ).ready(function(){
+  $('#url').text($(location).attr("href"));
+   $(".CodeMirror").mouseover(()=>{
+   $(".other-client").each(function(index) {
+    $(this).on("mouseover", function(){
+  console.log(idMapping.get($(this).attr("data-clientid")));
+  $(this).html("<span class='titlebox'>"+idMapping.get($(this).attr("data-clientid"))+"</span>")
+  });
+  $(this).on("mouseout", function(){
+   $(this).empty();
+});})
+})
+})
+
+  // Chat Feature
+  var roomId = $('#id').val();
+  var displayName = $('#name').val();
+  socket.emit('joinRoom', { room: roomId, username: displayName});
+  var input = document.getElementById("text-line");
+// Execute a function when the user releases a key on the keyboard
+   input.addEventListener("keyup", function(event) {
+  if (event.keyCode === 13) {
+    event.preventDefault();
+    sendMessage();
+  }
+});
+  var userMessage = function(name, text,flag) {
+    if(flag){
+      return('<li class="messageli">' +
+      '<div class="message-body">' + text +
+      '</div></li>'
+    );
+    }
+    return('<li class="messageli">' +
+      '<div class="message-body">' +
+      '<b>' + name + '</b> : ' + text +
+      '</div></li>'
+    );
+  };
+
+  var groupMember = function(name,flag) {
+    if(!flag){
+      return('<li class="messageli">' +
+      '<div class="message-body">' + 
+      '<b>' + name + '</b> <hr>' +
+      '</div></li>'
+    );
+    }else{
+    return('<li class="messageli">' +
+      '<div class="message-body">' +
+      '<b>' + name + '</b> (You) <hr>' + 
+      '</div></li>'
+    );
+  };
+  }
+
+
+  var sendMessage = function() {
+    var userMessage = $('#text-line').val();
+    socket.emit('chat', { message: userMessage, username: displayName,roomId:roomId});
+    $('#text-line').val('');
+  };
+  socket.on('chat', function(data) {
+    $('#user-messages').append(userMessage(data.data.username, data.data.message,data.flag));
+    $(".chat-group").stop().animate({ scrollTop: $(".chat-group")[0].scrollHeight}, 1000);
+  });
+</script>
+</body>

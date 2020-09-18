@@ -1,0 +1,31 @@
+/* Made with love by Mutiullah Samim*/
+
+
+
+html,body{
+background-image: url('/pexels-lukas-574073.jpg');
+background-size: cover;
+background-repeat: no-repeat;
+background-position: center;
+height: 100%;
+font-family: 'hind';
+}
+
+.container{
+height: 100%;
+align-content: center;
+}
+
+
+
+.google-btn{ 
+	background-color: #DF4B3B;
+	font-weight: 100;
+    color: white;
+    width: 190px;
+    font-size: 0.9rem;
+    position: fixed;
+    top:50%;
+    left:40%;
+
+ }

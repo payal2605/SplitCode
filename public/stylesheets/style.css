@@ -1,0 +1,21 @@
+
+.col-md-4{
+  background-color: #cacaea;
+}
+
+.col-md-8{
+background-color: #cacaea;
+}
+.CodeMirror
+{
+  height:100%;
+  width: 100%;
+}
+
+#first-step-error, #second-step, #third-step {
+  display: none;
+}
+
+#own-user-id {
+  font-weight: bold;
+}
