@@ -23,3 +23,10 @@ A Collaborative Code Editor where developers can collaborate, share, and edit co
 
 
 > 5.Run npm start
+
+## Technologies used
+1. Node.js(Express)
+2. MongoDB
+3. Socket.io
+4. OT
+5. JavaScript
