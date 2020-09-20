@@ -30,3 +30,6 @@ A Collaborative Code Editor where developers can collaborate, share, and edit co
 3. Socket.io
 4. OT.js
 5. JavaScript
+
+### Heroku app: 
+https://splitcode.herokuapp.com/ (Still working on)
