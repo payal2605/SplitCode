@@ -28,5 +28,5 @@ A Collaborative Code Editor where developers can collaborate, share, and edit co
 1. Node.js(Express)
 2. MongoDB
 3. Socket.io
-4. OT
+4. OT.js
 5. JavaScript
